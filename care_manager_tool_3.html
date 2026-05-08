@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ケアマネ営業管理ツール</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f5f5f0; color: #1a1a1a; font-size: 14px; }
+  .header { background: #1a1a1a; color: #fff; padding: 14px 24px; font-size: 16px; font-weight: 500; }
+  .tabs { display: flex; background: #fff; border-bottom: 1px solid #e5e5e0; padding: 0 24px; }
+  .tab { padding: 12px 20px; font-size: 14px; font-weight: 500; border: none; background: none; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; }
+  .tab:hover { color: #1a1a1a; }
+  .panel { display: none; padding: 24px; max-width: 800px; }
+  .panel.active { display: block; }
+  .card { background: #fff; border: 1px solid #e5e5e0; border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+  .sec { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; margin-top: 10px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=date], input[type=file], select, textarea {
+    width: 100%; border: 1px solid #ddd; border-radius: 7px; padding: 8px 10px;
+    font-size: 14px; background: #fff; color: #1a1a1a; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #1a1a1a; }
+  textarea { min-height: 64px; resize: vertical; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 7px; border: 1px solid #ccc; background: #fff; color: #1a1a1a; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 12px; margin-right: 8px; font-family: inherit; }
+  .btn:hover { background: #f5f5f0; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .btn-primary:hover { background: #333; }
+  .status { font-size: 13px; margin-top: 10px; padding: 9px 12px; border-radius: 7px; display: none; }
+  .status.show { display: block; }
+  .status.ok { background: #e1f5ee; color: #0a6640; }
+  .status.err { background: #fce8e8; color: #a32d2d; }
+  .status.info { background: #e6f1fb; color: #185fa5; }
+  .office-item { border: 1px solid #e5e5e0; border-radius: 7px; padding: 10px 14px; margin-bottom: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+  .office-item:hover { background: #f5f5f0; }
+  .oname { font-size: 14px; font-weight: 500; }
+  .ometa { font-size: 12px; color: #888; margin-top: 2px; }
+  .history-item { border: 1px solid #e5e5e0; border-radius: 7px; padding: 10px 14px; margin-bottom: 6px; background: #fff; }
+  .hcount { font-size: 12px; padding: 2px 8px; border-radius: 20px; background: #e6f1fb; color: #185fa5; }
+  .divider { border: none; border-top: 1px solid #e5e5e0; margin: 16px 0; }
+  .info-box { background: #f5f5f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  .info-row { display: flex; gap: 8px; margin-bottom: 4px; font-size: 13px; }
+  .info-key { color: #888; min-width: 90px; }
+  .paste-area { width: 100%; min-height: 80px; border: 2px dashed #ccc; border-radius: 7px; padding: 10px 12px; font-size: 14px; background: #fafafa; color: #1a1a1a; resize: vertical; font-family: inherit; }
+  .paste-area:focus { outline: none; border-color: #1a1a1a; }
+  .search-inp { width: 100%; border: 1px solid #ddd; border-radius: 7px; padding: 8px 10px; font-size: 14px; margin-bottom: 10px; font-family: inherit; }
+  .search-inp:focus { outline: none; border-color: #1a1a1a; }
+  .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <span>ケアマネ営業管理ツール / <span id="area-label">三田市</span></span>
+    <div style="display:flex;gap:6px;">
+      <button class="area-btn active" data-area="三田市" onclick="switchArea('三田市')" style="padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.2);color:#fff;font-size:12px;cursor:pointer;font-family:inherit;">三田市</button>
+      <button class="area-btn" data-area="神戸市北区" onclick="switchArea('神戸市北区')" style="padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.4);background:transparent;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;font-family:inherit;">神戸市北区</button>
+      <button class="area-btn" data-area="猪名川町" onclick="switchArea('猪名川町')" style="padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.4);background:transparent;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;font-family:inherit;">猪名川町</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" id="tab-report" onclick="showPanel('report')">営業日報</button>
+  <button class="tab" id="tab-offices" onclick="showPanel('offices')">事業所管理</button>
+  <button class="tab" id="tab-history" onclick="showPanel('history')">営業履歴</button>
+</div>
+
+<!-- 営業日報 -->
+<div id="panel-report" class="panel active">
+  <div class="card">
+    <p class="sec">事業所を選択</p>
+    <input class="search-inp" id="r-search" placeholder="事業所名で検索..." oninput="filterSelect()" />
+    <select id="r-office" onchange="onOfficeChange()">
+      <option value="">-- 事業所を選んでください --</option>
+    </select>
+  </div>
+
+  <div class="info-box" id="r-infobox" style="display:none;">
+    <div class="info-row"><span class="info-key">営業時間</span><span id="ri-hours">—</span></div>
+    <div class="info-row"><span class="info-key">ケアマネ人数</span><span id="ri-carenum">—</span></div>
+    <div class="info-row"><span class="info-key">併設サービス</span><span id="ri-services">—</span></div>
+    <div class="info-row"><span class="info-key">担当ケアマネ</span><span id="ri-cm">—</span></div>
+  </div>
+
+  <div class="card">
+    <p class="sec">ChatGPTまとめを貼り付け → AI自動入力</p>
+    <textarea class="paste-area" id="r-raw" placeholder="例：今日は田中さんに訪問。10時から1時間営業。ショートステイの資料を渡した。来週また連絡することに。"></textarea>
+    <button class="btn" id="r-aibtn" onclick="doAI()">✨ AIで自動入力</button>
+    <div class="status" id="r-aistatus"></div>
+  </div>
+
+  <div class="card">
+    <p class="sec">日報入力</p>
+    <div class="row2">
+      <div><label>訪問日</label><input type="date" id="r-date" /></div>
+      <div><label>担当者名</label><input type="text" id="r-person" placeholder="田中さん" /></div>
+    </div>
+    <div class="row2">
+      <div><label>営業時間</label><input type="text" id="r-time" placeholder="10:00〜11:00" /></div>
+      <div><label>ケアマネ人数</label><input type="text" id="r-carenum" placeholder="5名" /></div>
+    </div>
+    <label>併設サービス</label>
+    <input type="text" id="r-services" placeholder="デイサービスなど" />
+    <label>提案した資料</label>
+    <input type="text" id="r-materials" placeholder="ショートステイ資料など" />
+    <label>話した内容</label>
+    <textarea id="r-content" placeholder="具体的な会話内容"></textarea>
+    <label>次回アクション</label>
+    <textarea id="r-next" placeholder="来週〇日に再訪など"></textarea>
+    <div>
+      <button class="btn btn-primary" onclick="saveReport()">💾 スプレッドシートに保存</button>
+      <button class="btn" onclick="copyReport()">📋 日報をコピー</button>
+      <button class="btn" onclick="resetReport()">↺ リセット</button>
+    </div>
+    <div class="status" id="r-savestatus"></div>
+  </div>
+</div>
+
+<!-- 事業所管理 -->
+<div id="panel-offices" class="panel">
+  <div class="card">
+    <p class="sec">CSVで一括インポート</p>
+    <p style="font-size:13px;color:#888;margin-bottom:10px;">列の順番：事業所名, 住所, 電話番号, 営業時間, ケアマネ人数, 併設サービス, 担当ケアマネ名, 備考<br>※先頭に番号列がある場合は自動スキップします</p>
+    <input type="file" accept=".csv" id="csv-input" />
+    <br>
+    <button class="btn btn-primary" onclick="doImport()">⬆ インポート実行</button>
+    <div class="status" id="csv-status"></div>
+  </div>
+
+  <div class="card">
+    <p class="sec">手動で追加・編集</p>
+    <label>事業所名</label>
+    <input type="text" id="o-name" placeholder="〇〇居宅介護支援事務所" />
+    <div class="row2">
+      <div><label>電話番号</label><input type="text" id="o-tel" placeholder="06-xxxx-xxxx" /></div>
+      <div><label>営業時間</label><input type="text" id="o-hours" placeholder="9:00〜18:00" /></div>
+    </div>
+    <label>住所</label>
+    <input type="text" id="o-address" placeholder="兵庫県三田市..." />
+    <div class="row2">
+      <div><label>ケアマネ人数</label><input type="text" id="o-carenum" placeholder="5名" /></div>
+      <div><label>担当ケアマネ名</label><input type="text" id="o-cm" placeholder="田中さん" /></div>
+    </div>
+    <label>併設サービス</label>
+    <input type="text" id="o-services" placeholder="デイサービスなど" />
+    <label>備考</label>
+    <textarea id="o-note" placeholder="メモ"></textarea>
+    <div>
+      <button class="btn btn-primary" onclick="saveOne()">💾 保存する</button>
+      <button class="btn" onclick="clearOffice()">↺ クリア</button>
+    </div>
+    <div class="status" id="o-status"></div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="list-header">
+    <p class="sec" style="margin:0;">登録済み事業所 <span id="o-count" style="font-weight:400;text-transform:none;font-size:13px;"></span></p>
+    <button class="btn" onclick="loadOffices()">↺ 更新</button>
+  </div>
+  <input class="search-inp" id="o-search" placeholder="絞り込み..." oninput="renderList()" />
+  <div id="o-list"></div>
+</div>
+
+<!-- 営業履歴 -->
+<div id="panel-history" class="panel">
+  <div class="list-header">
+    <p class="sec" style="margin:0;">事業所別 訪問履歴</p>
+    <button class="btn" onclick="loadHistory()">↺ 更新</button>
+  </div>
+  <input class="search-inp" id="h-search" placeholder="事業所名で絞り込み..." oninput="renderHistory()" />
+  <div id="h-list"><p style="color:#888;">読み込み中...</p></div>
+  <div id="h-detail" style="display:none;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <button class="btn" onclick="backToList()">← 一覧に戻る</button>
+      <span id="h-detail-name" style="font-size:16px;font-weight:500;"></span>
+    </div>
+    <div id="h-detail-content"></div>
+  </div>
+</div>
+
+<script>
+const AREAS = {
+  '三田市': 'https://script.google.com/macros/s/AKfycbz-uHdIfrGBSvr7PRSedFM1R6IsvIn0oR_yqL7ZX9uE1-7JNHmgymoejYr57wHzeFV2vg/exec',
+  '神戸市北区': 'https://script.google.com/macros/s/AKfycbzWbGY-HDWwo-ja8AayLoLSxw4fH2OrpJPfyvCY1B42iOzcOKdHL4rcYk7x72MiuRZI/exec',
+  '猪名川町': ''
+};
+let currentArea = '三田市';
+function switchArea(area) {
+  if (!AREAS[area]) { alert('猪名川町のURLはまだ設定されていません'); return; }
+  currentArea = area;
+  document.querySelectorAll('.area-btn').forEach(b => {
+    const isActive = b.dataset.area === area;
+    b.style.background = isActive ? 'rgba(255,255,255,0.2)' : 'transparent';
+    b.style.color = isActive ? '#fff' : 'rgba(255,255,255,0.7)';
+  });
+  document.getElementById('area-label').textContent = area;
+  offices = []; reports = []; editId = null;
+  document.getElementById('r-office').innerHTML = '<option value="">-- 事業所を選んでください --</option>';
+  document.getElementById('r-infobox').style.display = 'none';
+  document.getElementById('o-list').innerHTML = '';
+  document.getElementById('h-list').innerHTML = '<p style="color:#888;">読み込み中...</p>';
+  document.getElementById('h-detail').style.display = 'none';
+  document.getElementById('h-list').style.display = 'block';
+  loadOffices();
+}
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+let offices = [];
+let reports = [];
+let editId = null;
+
+function showPanel(name) {
+  ['report','offices','history'].forEach(n => {
+    document.getElementById('panel-'+n).classList.toggle('active', n===name);
+    document.getElementById('tab-'+n).classList.toggle('active', n===name);
+  });
+  if (name==='history') loadHistory();
+  if (name==='offices') loadOffices();
+}
+
+async function gas(payload) {
+  const url = AREAS[currentArea];
+  if (!url) { throw new Error('URLが設定されていません'); }
+  const r = await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'text/plain' }
+  });
+  return r.json();
+}
+
+function showSt(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status show ' + type;
+}
+
+async function loadOffices() {
+  document.getElementById('o-count').textContent = '（読み込み中...）';
+  try {
+    const res = await gas({ action: 'getOffices' });
+    if (res.status === 'ok' && res.data.length > 1) {
+      offices = res.data.slice(1).map((r, i) => ({
+        id: r[0] || 'O'+(i+1), name: r[1], address: r[2], tel: r[3],
+        hours: r[4], careNum: r[5], services: r[6], cm: r[7], note: r[8]
+      }));
+    } else { offices = []; }
+    document.getElementById('o-count').textContent = '（' + offices.length + '件）';
+    renderList();
+    rebuildSelect();
+  } catch(e) {
+    document.getElementById('o-count').textContent = '（読み込み失敗）';
+  }
+}
+
+function rebuildSelect() {
+  renderSelect('');
+}
+
+function renderSelect(q) {
+  const sel = document.getElementById('r-office');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- 事業所を選んでください --</option>';
+  offices.filter(o => !q || (o.name||'').includes(q)).forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o.id;
+    opt.textContent = o.name;
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+function filterSelect() {
+  renderSelect(document.getElementById('r-search').value);
+}
+
+function onOfficeChange() {
+  const id = document.getElementById('r-office').value;
+  const o = offices.find(x => x.id === id);
+  const box = document.getElementById('r-infobox');
+  if (o) {
+    box.style.display = 'block';
+    document.getElementById('ri-hours').textContent = o.hours || '—';
+    document.getElementById('ri-carenum').textContent = o.careNum || '—';
+    document.getElementById('ri-services').textContent = o.services || '—';
+    document.getElementById('ri-cm').textContent = o.cm || '—';
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function renderList() {
+  const q = document.getElementById('o-search').value;
+  const list = document.getElementById('o-list');
+  const filtered = offices.filter(o => !q || (o.name||'').includes(q));
+  if (!filtered.length) {
+    list.innerHTML = '<p style="color:#888;font-size:14px;">登録なし</p>';
+    return;
+  }
+  list.innerHTML = filtered.map(o => `
+    <div class="office-item" onclick="editOffice('${o.id}')">
+      <div>
+        <div class="oname">${o.name || '—'}</div>
+        <div class="ometa">${o.tel || '電話未登録'} / ケアマネ ${o.careNum || '—'}</div>
+      </div>
+      <span style="color:#ccc;">›</span>
+    </div>`).join('');
+}
+
+function editOffice(id) {
+  const o = offices.find(x => x.id === id);
+  if (!o) return;
+  editId = id;
+  document.getElementById('o-name').value = o.name || '';
+  document.getElementById('o-address').value = o.address || '';
+  document.getElementById('o-tel').value = o.tel || '';
+  document.getElementById('o-hours').value = o.hours || '';
+  document.getElementById('o-carenum').value = o.careNum || '';
+  document.getElementById('o-cm').value = o.cm || '';
+  document.getElementById('o-services').value = o.services || '';
+  document.getElementById('o-note').value = o.note || '';
+  document.getElementById('o-name').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('o-name').focus();
+}
+
+async function doImport() {
+  const file = document.getElementById('csv-input').files[0];
+  if (!file) { showSt('csv-status', 'CSVファイルを選択してください', 'err'); return; }
+  showSt('csv-status', '読み込み中...', 'info');
+  try {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    const rows = [];
+    for (const line of lines) {
+      const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+      if (!cols[0]) continue;
+      const isNum = /^\d+$/.test(cols[0]);
+      const c = isNum ? cols.slice(1) : cols;
+      if (!c[0] || c[0].includes('事業所名')) continue;
+      rows.push([c[0]||'', c[1]||'', c[2]||'', c[3]||'', c[4]||'', c[5]||'', c[6]||'', c[7]||'']);
+    }
+    if (!rows.length) { showSt('csv-status', '有効なデータがありませんでした', 'err'); return; }
+    showSt('csv-status', rows.length + '件を送信中...', 'info');
+    const res = await gas({ action: 'saveBatchOffices', rows });
+    if (res.status === 'ok') {
+      showSt('csv-status', '✓ ' + res.count + '件インポートしました！', 'ok');
+      await loadOffices();
+    } else {
+      showSt('csv-status', 'エラー: ' + (res.message||'不明'), 'err');
+    }
+  } catch(e) {
+    showSt('csv-status', 'エラー: ' + e.message, 'err');
+  }
+}
+
+async function saveOne() {
+  const name = document.getElementById('o-name').value.trim();
+  if (!name) { showSt('o-status', '事業所名を入力してください', 'err'); return; }
+  const id = editId || 'O' + Date.now();
+  showSt('o-status', '保存中...', 'info');
+  try {
+    await gas({
+      action: 'saveOffice', id, name,
+      address: document.getElementById('o-address').value,
+      tel: document.getElementById('o-tel').value,
+      hours: document.getElementById('o-hours').value,
+      careNum: document.getElementById('o-carenum').value,
+      services: document.getElementById('o-services').value,
+      careManager: document.getElementById('o-cm').value,
+      note: document.getElementById('o-note').value
+    });
+    showSt('o-status', '✓ 保存しました', 'ok');
+    editId = null;
+    clearOffice();
+    await loadOffices();
+  } catch(e) {
+    showSt('o-status', 'エラー: ' + e.message, 'err');
+  }
+}
+
+function clearOffice() {
+  ['o-name','o-address','o-tel','o-hours','o-carenum','o-cm','o-services','o-note']
+    .forEach(id => document.getElementById(id).value = '');
+  editId = null;
+}
+
+async function doAI() {
+  const raw = document.getElementById('r-raw').value.trim();
+  if (!raw) { showSt('r-aistatus', 'テキストを貼り付けてください', 'err'); return; }
+  const btn = document.getElementById('r-aibtn');
+  btn.disabled = true;
+  showSt('r-aistatus', 'AI処理中...', 'info');
+  try {
+    const res = await fetch(ANTHROPIC_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        messages: [{
+          role: 'user',
+          content: '営業メモからJSONで抽出。JSONのみ返す。\n{"person":"担当者名","time":"営業時間","careNum":"ケアマネ人数","services":"併設サービス","materials":"提案資料","content":"話した内容","next":"次回アクション"}\nメモ: ' + raw
+        }]
+      })
+    });
+    const d = await res.json();
+    const t = d.content.map(b => b.text || '').join('');
+    const p = JSON.parse(t.replace(/```json|```/g, '').trim());
+    document.getElementById('r-person').value = p.person || '';
+    document.getElementById('r-time').value = p.time || '';
+    document.getElementById('r-carenum').value = p.careNum || '';
+    document.getElementById('r-services').value = p.services || '';
+    document.getElementById('r-materials').value = p.materials || '';
+    document.getElementById('r-content').value = p.content || '';
+    document.getElementById('r-next').value = p.next || '';
+    showSt('r-aistatus', '✓ 自動入力しました。確認・修正してください', 'ok');
+  } catch(e) {
+    showSt('r-aistatus', 'エラー: ' + e.message, 'err');
+  }
+  btn.disabled = false;
+}
+
+async function saveReport() {
+  const officeId = document.getElementById('r-office').value;
+  const o = offices.find(x => x.id === officeId);
+  const officeName = o ? o.name : '';
+  const count = reports.filter(r => r[1] === officeId).length + 1;
+  showSt('r-savestatus', '保存中...', 'info');
+  try {
+    await gas({
+      action: 'saveReport',
+      date: document.getElementById('r-date').value,
+      officeId, officeName,
+      person: document.getElementById('r-person').value,
+      time: document.getElementById('r-time').value,
+      count: count + '回目',
+      careNum: document.getElementById('r-carenum').value,
+      services: document.getElementById('r-services').value,
+      materials: document.getElementById('r-materials').value,
+      content: document.getElementById('r-content').value,
+      next: document.getElementById('r-next').value
+    });
+    showSt('r-savestatus', '✓ ' + (officeName||'事業所') + ' の' + count + '回目営業を保存しました', 'ok');
+  } catch(e) {
+    showSt('r-savestatus', 'エラー: ' + e.message, 'err');
+  }
+}
+
+function copyReport() {
+  const o = offices.find(x => x.id === document.getElementById('r-office').value);
+  const lines = [
+    '【営業日報】' + document.getElementById('r-date').value,
+    '事業所：' + (o ? o.name : '未選択'),
+    '担当者：' + (document.getElementById('r-person').value || '—'),
+    '営業時間：' + (document.getElementById('r-time').value || '—'),
+    'ケアマネ人数：' + (document.getElementById('r-carenum').value || '—'),
+    '併設サービス：' + (document.getElementById('r-services').value || '—'),
+    '提案資料：' + (document.getElementById('r-materials').value || '—'),
+    '',
+    '【話した内容】',
+    document.getElementById('r-content').value || '—',
+    '',
+    '【次回アクション】',
+    document.getElementById('r-next').value || '—',
+  ];
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    showSt('r-savestatus', '✓ クリップボードにコピーしました', 'ok');
+    setTimeout(() => { document.getElementById('r-savestatus').className = 'status'; }, 3000);
+  });
+}
+
+function resetReport() {
+  ['r-raw','r-person','r-time','r-carenum','r-services','r-materials','r-content','r-next']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('r-aistatus').className = 'status';
+  document.getElementById('r-savestatus').className = 'status';
+}
+
+async function loadHistory() {
+  document.getElementById('h-list').innerHTML = '<p style="color:#888;">読み込み中...</p>';
+  document.getElementById('h-detail').style.display = 'none';
+  document.getElementById('h-list').style.display = 'block';
+  try {
+    const res = await gas({ action: 'getReports' });
+    reports = (res.status === 'ok' && res.data.length > 1) ? res.data.slice(1) : [];
+    renderHistory();
+  } catch(e) {
+    document.getElementById('h-list').innerHTML = '<p style="color:#c00;">読み込み失敗: ' + e.message + '</p>';
+  }
+}
+
+function renderHistory() {
+  const q = document.getElementById('h-search').value;
+  const grouped = {};
+  offices.forEach(o => {
+    grouped[o.id] = { id: o.id, name: o.name, items: [] };
+  });
+  reports.forEach(r => {
+    const k = r[1];
+    if (grouped[k]) {
+      grouped[k].items.push(r);
+    } else {
+      if (!grouped['_'+r[2]]) grouped['_'+r[2]] = { id: '_'+r[2], name: r[2]||'不明', items: [] };
+      grouped['_'+r[2]].items.push(r);
+    }
+  });
+  const list = Object.values(grouped).filter(g => !q || (g.name||'').includes(q));
+  if (!list.length) {
+    document.getElementById('h-list').innerHTML = '<p style="color:#888;font-size:14px;">事業所がありません</p>';
+    return;
+  }
+  const visited = list.filter(g => g.items.length > 0).sort((a,b) => {
+    const da = a.items[a.items.length-1][0] || '';
+    const db = b.items[b.items.length-1][0] || '';
+    return db.localeCompare(da);
+  });
+  const unvisited = list.filter(g => g.items.length === 0);
+  const render = (items) => items.map(g => {
+    const last = g.items.length > 0 ? g.items[g.items.length-1] : null;
+    const lastDate = last ? last[0] : '未訪問';
+    const nextAction = last ? (last[10]||'') : '';
+    const badgeBg = g.items.length > 0 ? '#e6f1fb' : '#f5f5f0';
+    const badgeColor = g.items.length > 0 ? '#185fa5' : '#888';
+    return `<div class="office-item" onclick="showDetail('${g.id}')">
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="oname">${g.name||'—'}</span>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${badgeBg};color:${badgeColor};">${g.items.length}回訪問</span>
+        </div>
+        <div class="ometa">最終訪問：${lastDate}${nextAction ? ' ／ 次回：'+nextAction.substring(0,20) : ''}</div>
+      </div>
+      <span style="color:#ccc;">›</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('h-list').innerHTML =
+    (visited.length ? '<p style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">訪問済み（' + visited.length + '件）</p>' + render(visited) : '') +
+    (unvisited.length ? '<p style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin:16px 0 8px;">未訪問（' + unvisited.length + '件）</p>' + render(unvisited) : '');
+}
+
+function showDetail(id) {
+  const g = (() => {
+    const o = offices.find(x => x.id === id);
+    const name = o ? o.name : id.replace('_','');
+    const items = reports.filter(r => r[1] === id || ('_'+r[2]) === id);
+    return { name, items };
+  })();
+  document.getElementById('h-search').style.display = 'none';
+  document.getElementById('h-list').style.display = 'none';
+  document.getElementById('h-detail').style.display = 'block';
+  document.getElementById('h-detail-name').textContent = g.name;
+  if (!g.items.length) {
+    document.getElementById('h-detail-content').innerHTML = '<p style="color:#888;font-size:14px;">まだ訪問記録がありません</p>';
+    return;
+  }
+  document.getElementById('h-detail-content').innerHTML = g.items.map((r, i) => `
+    <div class="history-item" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:13px;font-weight:600;padding:2px 10px;border-radius:20px;background:#1a1a1a;color:#fff;">${r[5]||((i+1)+'回目')}</span>
+          <span style="font-size:13px;font-weight:500;">${r[0]||'日付不明'}</span>
+        </div>
+        <span style="font-size:12px;color:#888;">${r[3]||''}</span>
+      </div>
+      ${r[4] ? '<div style="font-size:12px;color:#888;margin-bottom:6px;">営業時間：'+r[4]+'</div>' : ''}
+      ${r[6] ? '<div style="font-size:12px;color:#888;margin-bottom:6px;">ケアマネ人数：'+r[6]+'</div>' : ''}
+      ${r[8] ? '<div style="font-size:12px;color:#888;margin-bottom:6px;">提案資料：'+r[8]+'</div>' : ''}
+      ${r[9] ? '<div style="margin-bottom:6px;"><div style="font-size:11px;color:#888;margin-bottom:2px;">話した内容</div><div style="font-size:13px;color:#333;line-height:1.6;">'+r[9]+'</div></div>' : ''}
+      ${r[10] ? '<div style="background:#e6f1fb;border-radius:6px;padding:8px 10px;font-size:13px;color:#185fa5;">→ 次回アクション：'+r[10]+'</div>' : ''}
+    </div>`).join('');
+}
+
+function backToList() {
+  document.getElementById('h-search').style.display = 'block';
+  document.getElementById('h-list').style.display = 'block';
+  document.getElementById('h-detail').style.display = 'none';
+}
+
+document.getElementById('r-date').valueAsDate = new Date();
+loadOffices();
+</script>
+</body>
+</html>
