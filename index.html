@@ -447,35 +447,56 @@ function parseText() {
   const raw = document.getElementById('r-raw').value.trim();
   if (!raw) { showSt('r-parsestatus', 'テキストを貼り付けてください', 'err'); return; }
 
-  // キーのリスト（この順番で区切りとして使う）
-  const allKeys = ['担当者名', '担当者', 'ケアマネ名', '営業時間', '訪問時間', 'ケアマネ人数', 'ケアマネ数', 'CM人数', '併設サービス', '提案した資料', '提案資料', '話した内容', '次回アクション'];
-
-  // 「キー：」の後、次の「キー：」が来るまでを取得（改行後に内容が来るパターンにも対応）
-  function extractMultiLine(text, keys) {
-    for (const key of keys) {
-      const stopPattern = allKeys.map(k => k + '[：:]').join('|');
-      const regex = new RegExp(key + '[：:]\s*([\s\S]*?)(?=(?:' + stopPattern + ')|$)', 'i');
-      const m = text.match(regex);
-      if (m && m[1].trim()) return m[1].trim();
+  // テキストを行ごとに分割してキーと値を解析
+  function extractAll(text) {
+    const result = {};
+    const keyMap = {
+      '担当者名': 'person', '担当者': 'person', 'ケアマネ名': 'person',
+      '営業時間': 'time', '訪問時間': 'time',
+      'ケアマネ人数': 'careNum', 'ケアマネ数': 'careNum', 'CM人数': 'careNum',
+      '併設サービス': 'services',
+      '提案した資料': 'materials', '提案資料': 'materials',
+      '話した内容': 'content',
+      '次回アクション': 'next'
+    };
+    
+    let currentKey = null;
+    let currentVal = [];
+    
+    const lines = text.split(/
+/);
+    for (const line of lines) {
+      let matched = false;
+      for (const [jp, en] of Object.entries(keyMap)) {
+        const re = new RegExp('^' + jp + '[：:](.*)$');
+        const m = line.match(re);
+        if (m) {
+          if (currentKey) result[currentKey] = currentVal.join('
+').trim();
+          currentKey = en;
+          currentVal = [m[1].trim()];
+          matched = true;
+          break;
+        }
+      }
+      if (!matched && currentKey) {
+        currentVal.push(line);
+      }
     }
-    return '';
+    if (currentKey) result[currentKey] = currentVal.join('
+').trim();
+    return result;
   }
 
-  const person   = extractMultiLine(raw, ['担当者名', '担当者', 'ケアマネ名']);
-  const time     = extractMultiLine(raw, ['営業時間', '訪問時間']);
-  const careNum  = extractMultiLine(raw, ['ケアマネ人数', 'ケアマネ数', 'CM人数']);
-  const services = extractMultiLine(raw, ['併設サービス']);
-  const materials= extractMultiLine(raw, ['提案した資料', '提案資料']);
-  const content  = extractMultiLine(raw, ['話した内容']);
-  const next     = extractMultiLine(raw, ['次回アクション']);
+  const parsed = extractAll(raw);
 
-  if (person)    document.getElementById('r-person').value = person;
-  if (time)      document.getElementById('r-time').value = time;
-  if (careNum)   document.getElementById('r-carenum').value = careNum;
-  if (services)  document.getElementById('r-services').value = services;
-  if (materials) document.getElementById('r-materials').value = materials;
-  if (content)   document.getElementById('r-content').value = content;
-  if (next)      document.getElementById('r-next').value = next;
+  if (parsed.person)    document.getElementById('r-person').value = parsed.person;
+  if (parsed.time)      document.getElementById('r-time').value = parsed.time;
+  if (parsed.careNum)   document.getElementById('r-carenum').value = parsed.careNum;
+  if (parsed.services)  document.getElementById('r-services').value = parsed.services;
+  if (parsed.materials) document.getElementById('r-materials').value = parsed.materials;
+  if (parsed.content)   document.getElementById('r-content').value = parsed.content;
+  if (parsed.next)      document.getElementById('r-next').value = parsed.next;
 
   showSt('r-parsestatus', '✓ 自動入力しました。内容を確認・修正してください', 'ok');
 }
