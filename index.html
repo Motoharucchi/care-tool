@@ -446,34 +446,36 @@ function clearOffice() {
 function parseText() {
   const raw = document.getElementById('r-raw').value.trim();
   if (!raw) { showSt('r-parsestatus', 'テキストを貼り付けてください', 'err'); return; }
-  
-  function extract(text, keys) {
+
+  // キーのリスト（この順番で区切りとして使う）
+  const allKeys = ['担当者名', '担当者', 'ケアマネ名', '営業時間', '訪問時間', 'ケアマネ人数', 'ケアマネ数', 'CM人数', '併設サービス', '提案した資料', '提案資料', '話した内容', '次回アクション'];
+
+  // 「キー：」の後、次の「キー：」が来るまでを取得（改行後に内容が来るパターンにも対応）
+  function extractMultiLine(text, keys) {
     for (const key of keys) {
-      const regex = new RegExp(key + '[：:]+([^\n]+)', 'i');
+      const stopPattern = allKeys.map(k => k + '[：:]').join('|');
+      const regex = new RegExp(key + '[：:]\s*([\s\S]*?)(?=(?:' + stopPattern + ')|$)', 'i');
       const m = text.match(regex);
-      if (m) return m[1].trim();
+      if (m && m[1].trim()) return m[1].trim();
     }
     return '';
   }
 
-  const person = extract(raw, ['担当者名', '担当者', 'ケアマネ名']);
-  const time = extract(raw, ['営業時間', '時間', '訪問時間']);
-  const careNum = extract(raw, ['ケアマネ人数', 'ケアマネ数', 'CM人数']);
-  const services = extract(raw, ['併設サービス', '併設', 'サービス']);
-  const materials = extract(raw, ['提案した資料', '提案資料', '資料']);
-  const next = extract(raw, ['次回アクション', '次回', 'アクション']);
+  const person   = extractMultiLine(raw, ['担当者名', '担当者', 'ケアマネ名']);
+  const time     = extractMultiLine(raw, ['営業時間', '訪問時間']);
+  const careNum  = extractMultiLine(raw, ['ケアマネ人数', 'ケアマネ数', 'CM人数']);
+  const services = extractMultiLine(raw, ['併設サービス']);
+  const materials= extractMultiLine(raw, ['提案した資料', '提案資料']);
+  const content  = extractMultiLine(raw, ['話した内容']);
+  const next     = extractMultiLine(raw, ['次回アクション']);
 
-  // 話した内容は複数行になることがあるので別処理
-  const contentMatch = raw.match(/話した内容[：:]+([\s\S]+?)(?=\n担当者名|\n営業時間|\n次回|\nケアマネ|\n併設|\n提案|$)/i);
-  const content = contentMatch ? contentMatch[1].trim() : '';
-
-  if (person) document.getElementById('r-person').value = person;
-  if (time) document.getElementById('r-time').value = time;
-  if (careNum) document.getElementById('r-carenum').value = careNum;
-  if (services) document.getElementById('r-services').value = services;
+  if (person)    document.getElementById('r-person').value = person;
+  if (time)      document.getElementById('r-time').value = time;
+  if (careNum)   document.getElementById('r-carenum').value = careNum;
+  if (services)  document.getElementById('r-services').value = services;
   if (materials) document.getElementById('r-materials').value = materials;
-  if (content) document.getElementById('r-content').value = content;
-  if (next) document.getElementById('r-next').value = next;
+  if (content)   document.getElementById('r-content').value = content;
+  if (next)      document.getElementById('r-next').value = next;
 
   showSt('r-parsestatus', '✓ 自動入力しました。内容を確認・修正してください', 'ok');
 }
