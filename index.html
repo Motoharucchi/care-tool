@@ -444,60 +444,47 @@ function clearOffice() {
 }
 
 function parseText() {
-  const raw = document.getElementById('r-raw').value.trim();
+  var raw = document.getElementById('r-raw').value.trim();
   if (!raw) { showSt('r-parsestatus', 'テキストを貼り付けてください', 'err'); return; }
-
-  // テキストを行ごとに分割してキーと値を解析
-  function extractAll(text) {
-    const result = {};
-    const keyMap = {
-      '担当者名': 'person', '担当者': 'person', 'ケアマネ名': 'person',
-      '営業時間': 'time', '訪問時間': 'time',
-      'ケアマネ人数': 'careNum', 'ケアマネ数': 'careNum', 'CM人数': 'careNum',
-      '併設サービス': 'services',
-      '提案した資料': 'materials', '提案資料': 'materials',
-      '話した内容': 'content',
-      '次回アクション': 'next'
-    };
-    
-    let currentKey = null;
-    let currentVal = [];
-    
-    const lines = text.split(/
-/);
-    for (const line of lines) {
-      let matched = false;
-      for (const [jp, en] of Object.entries(keyMap)) {
-        const re = new RegExp('^' + jp + '[：:](.*)$');
-        const m = line.match(re);
-        if (m) {
-          if (currentKey) result[currentKey] = currentVal.join('
-').trim();
-          currentKey = en;
-          currentVal = [m[1].trim()];
+  var keyMap = [
+    [['担当者名','担当者','ケアマネ名'], 'r-person'],
+    [['営業時間','訪問時間'], 'r-time'],
+    [['ケアマネ人数','ケアマネ数','CM人数'], 'r-carenum'],
+    [['併設サービス'], 'r-services'],
+    [['提案した資料','提案資料'], 'r-materials'],
+    [['話した内容'], 'r-content'],
+    [['次回アクション'], 'r-next']
+  ];
+  var lines = raw.split('\n');
+  var result = {};
+  var currentId = null;
+  var currentLines = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var matched = false;
+    for (var j = 0; j < keyMap.length; j++) {
+      var keys = keyMap[j][0];
+      var id = keyMap[j][1];
+      for (var k = 0; k < keys.length; k++) {
+        var key = keys[k];
+        if (line.indexOf(key + '：') === 0 || line.indexOf(key + ':') === 0) {
+          if (currentId) result[currentId] = currentLines.join('\n').trim();
+          currentId = id;
+          var val = line.replace(key + '：', '').replace(key + ':', '').trim();
+          currentLines = [val];
           matched = true;
           break;
         }
       }
-      if (!matched && currentKey) {
-        currentVal.push(line);
-      }
+      if (matched) break;
     }
-    if (currentKey) result[currentKey] = currentVal.join('
-').trim();
-    return result;
+    if (!matched && currentId) currentLines.push(line);
   }
-
-  const parsed = extractAll(raw);
-
-  if (parsed.person)    document.getElementById('r-person').value = parsed.person;
-  if (parsed.time)      document.getElementById('r-time').value = parsed.time;
-  if (parsed.careNum)   document.getElementById('r-carenum').value = parsed.careNum;
-  if (parsed.services)  document.getElementById('r-services').value = parsed.services;
-  if (parsed.materials) document.getElementById('r-materials').value = parsed.materials;
-  if (parsed.content)   document.getElementById('r-content').value = parsed.content;
-  if (parsed.next)      document.getElementById('r-next').value = parsed.next;
-
+  if (currentId) result[currentId] = currentLines.join('\n').trim();
+  for (var m = 0; m < keyMap.length; m++) {
+    var fid = keyMap[m][1];
+    if (result[fid]) document.getElementById(fid).value = result[fid];
+  }
   showSt('r-parsestatus', '✓ 自動入力しました。内容を確認・修正してください', 'ok');
 }
 
