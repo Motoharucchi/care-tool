@@ -196,11 +196,11 @@
 const AREAS = {
   '三田市': 'https://script.google.com/macros/s/AKfycbz-uHdIfrGBSvr7PRSedFM1R6IsvIn0oR_yqL7ZX9uE1-7JNHmgymoejYr57wHzeFV2vg/exec',
   '神戸市北区': 'https://script.google.com/macros/s/AKfycbzWbGY-HDWwo-ja8AayLoLSxw4fH2OrpJPfyvCY1B42iOzcOKdHL4rcYk7x72MiuRZI/exec',
-  '猪名川町': ''
+  '猪名川町': 'https://script.google.com/macros/s/AKfycbzFkLlpuauaRDnEWtHe0qWDT-0NtK9j0UZWkM87tCd87c1THjmFrdi2FZQ-yCnT46rLbg/exec'
 };
 let currentArea = '三田市';
 function switchArea(area) {
-  if (!AREAS[area]) { alert('猪名川町のURLはまだ設定されていません'); return; }
+  if (!AREAS[area]) { alert('このエリアのURLはまだ設定されていません'); return; }
   currentArea = area;
   document.querySelectorAll('.area-btn').forEach(b => {
     const isActive = b.dataset.area === area;
